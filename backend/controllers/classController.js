@@ -1,4 +1,6 @@
 const Class = require('../models/Class');
+const Subject = require('../models/Subject');
+const TimetableEntry = require('../models/TimetableEntry');
 
 exports.getAll = async (req, res) => {
   try {
@@ -11,7 +13,13 @@ exports.getAll = async (req, res) => {
 
 exports.create = async (req, res) => {
   try {
-    const newClass = new Class(req.body);
+    const { name, currentSemester } = req.body;
+    if (!name) return res.status(400).json({ message: 'Class name is required' });
+
+    const existing = await Class.findOne({ name });
+    if (existing) return res.status(400).json({ message: 'Class name already exists' });
+
+    const newClass = new Class({ name, currentSemester });
     await newClass.save();
     res.status(201).json(newClass);
   } catch (error) {
@@ -21,8 +29,15 @@ exports.create = async (req, res) => {
 
 exports.update = async (req, res) => {
   try {
-    const cls = await Class.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.json(cls);
+    const { id } = req.params;
+    const { name, currentSemester } = req.body;
+    
+    const existing = await Class.findOne({ name, _id: { $ne: id } });
+    if (existing) return res.status(400).json({ message: 'Another class already has this name' });
+
+    const updated = await Class.findByIdAndUpdate(id, { name, currentSemester }, { new: true });
+    if(!updated) return res.status(404).json({ message: 'Class not found' });
+    res.json(updated);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -30,7 +45,16 @@ exports.update = async (req, res) => {
 
 exports.delete = async (req, res) => {
   try {
-    await Class.findByIdAndDelete(req.params.id);
+    const { id } = req.params;
+
+    // Safety: check subjects
+    const subCount = await Subject.countDocuments({ classId: id });
+    if (subCount > 0) return res.status(400).json({ message: `Cannot delete: Class has ${subCount} subjects attached. Please delete them first.` });
+
+    const entryCount = await TimetableEntry.countDocuments({ classId: id });
+    if (entryCount > 0) return res.status(400).json({ message: 'Cannot delete: Class is in the active Timetable Matrix. Clear timetable first.' });
+
+    await Class.findByIdAndDelete(id);
     res.json({ message: 'Class deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });

@@ -6,6 +6,16 @@ const morgan = require('morgan');
 
 const app = express();
 
+// Environment Validation Stop-Block
+const requiredEnvs = ['MONGO_URI', 'JWT_SECRET'];
+for (const envVar of requiredEnvs) {
+  if (!process.env[envVar]) {
+    console.error(`[CRITICAL] Missing Required Environment Variable: ${envVar}`);
+    console.error(`Check your .env file or review .env.example. System halt.`);
+    process.exit(1);
+  }
+}
+
 // Middleware
 app.use(express.json());
 app.use(cors());
@@ -23,6 +33,7 @@ app.use('/api/subjects', require('./routes/subjectRoutes'));
 app.use('/api/classes', require('./routes/classRoutes'));
 app.use('/api/rooms', require('./routes/roomRoutes'));
 app.use('/api/timetable', require('./routes/timetableRoutes'));
+app.use('/api/config', require('./routes/slotConfigRoutes'));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

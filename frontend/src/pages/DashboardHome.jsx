@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Users, BookOpen, GraduationCap, DoorOpen, CalendarCheck } from 'lucide-react';
+import { Users, BookOpen, GraduationCap, DoorOpen, CalendarCheck, AlertTriangle } from 'lucide-react';
 import api from '../api/axios';
 
 function StatCard({ title, value, icon, color }) {
@@ -24,6 +24,8 @@ export default function DashboardHome() {
     rooms: 0,
     entries: 0
   });
+
+  const [conflicts, setConflicts] = useState([]);
 
   const fetchStats = async () => {
     try {
@@ -53,6 +55,11 @@ export default function DashboardHome() {
   const handleGenerate = async () => {
     try {
       const res = await api.post('/timetable/generate');
+      if (res.data.conflicts && res.data.conflicts.length > 0) {
+        setConflicts(res.data.conflicts);
+      } else {
+        setConflicts([]);
+      }
       alert(`Status: ${res.data.message}\nScheduled slots: ${res.data.inserted}`);
       fetchStats();
     } catch (err) {
@@ -64,6 +71,7 @@ export default function DashboardHome() {
     if(window.confirm('Are you sure you want to completely clear the current timetable?')) {
       try {
         await api.delete('/timetable/clear');
+        setConflicts([]);
         fetchStats();
       } catch (err) {
         alert('Clear failed');
@@ -102,11 +110,39 @@ export default function DashboardHome() {
         <StatCard title="Generated Slots" value={stats.entries} icon={<CalendarCheck size={24} className="text-brand-600" />} color="bg-brand-50" />
       </div>
 
-      {stats.entries > 0 && (
+      {conflicts.length > 0 && (
+         <div className="bg-red-50 border border-red-200 rounded-xl p-6 space-y-4">
+           <div className="flex items-center space-x-3 text-red-700 font-semibold text-lg pb-3 border-b border-red-200">
+             <AlertTriangle size={24} />
+             <span>Scheduling Conflicts Detected ({conflicts.length})</span>
+           </div>
+           <div className="space-y-3">
+             {conflicts.map((c, i) => (
+               <div key={i} className="bg-white p-4 rounded-lg shadow-sm border border-red-100 flex flex-col space-y-1">
+                 <div className="flex items-start justify-between">
+                   <span className="font-bold text-gray-900">{c.element}: {c.subjectName || c.className || c.type}</span>
+                   <span className="text-xs font-bold px-2 py-1 bg-red-100 text-red-700 rounded uppercase">{c.type}</span>
+                 </div>
+                 <p className="text-gray-600 text-sm mt-2">{c.message}</p>
+               </div>
+             ))}
+           </div>
+         </div>
+      )}
+
+      {stats.entries > 0 && conflicts.length === 0 && (
          <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-6 flex flex-col items-center justify-center space-y-4">
            <div className="text-4xl">🚀</div>
            <h3 className="text-lg font-semibold text-emerald-900">Timetable Loaded & Active</h3>
            <p className="text-emerald-700 max-w-lg text-center">Your platform's algorithmic engine has successfully populated {stats.entries} schedule blocks without collisions. Head over to the Timetable Matrix to view the output.</p>
+         </div>
+      )}
+      
+      {stats.entries > 0 && conflicts.length > 0 && (
+         <div className="bg-amber-50 border border-amber-100 rounded-xl p-6 flex flex-col items-center justify-center space-y-4">
+           <div className="text-4xl">⚠️</div>
+           <h3 className="text-lg font-semibold text-amber-900">Timetable Partially Generated</h3>
+           <p className="text-amber-700 max-w-lg text-center">The algorithm generated {stats.entries} slots but encountered constraints it couldn't resolve automatically. Check the conflicts above.</p>
          </div>
       )}
     </div>

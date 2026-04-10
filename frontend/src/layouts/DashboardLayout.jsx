@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, BookOpen, GraduationCap, DoorOpen, CalendarDays, LineChart, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, BookOpen, GraduationCap, DoorOpen, CalendarDays, LineChart, LogOut, Settings as SettingsIcon } from 'lucide-react';
 import { Outlet } from 'react-router-dom';
 
 export default function DashboardLayout({ setAuth }) {
@@ -19,6 +19,7 @@ export default function DashboardLayout({ setAuth }) {
     { path: '/rooms', name: 'Rooms', icon: <DoorOpen size={20} /> },
     { path: '/timetable', name: 'Timetable Matrix', icon: <CalendarDays size={20} /> },
     { path: '/analytics', name: 'Analytics', icon: <LineChart size={20} /> },
+    { path: '/settings', name: 'System Settings', icon: <SettingsIcon size={20} /> },
   ];
 
   return (
