@@ -10,6 +10,7 @@ import ClassManager from './pages/ClassManager';
 import RoomManager from './pages/RoomManager';
 import TimetableDisplay from './pages/TimetableDisplay';
 import Analytics from './pages/Analytics';
+import Settings from './pages/Settings';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -37,6 +38,7 @@ function App() {
           <Route path="rooms" element={<RoomManager />} />
           <Route path="timetable" element={<TimetableDisplay />} />
           <Route path="analytics" element={<Analytics />} />
+          <Route path="settings" element={<Settings />} />
         </Route>
       </Routes>
     </Router>
