@@ -1,0 +1,31 @@
+SMARTSCHED AI - PRODUCTION ARCHITECTURE DIAGRAM (TEXT)
+
+[ 1. FRONTEND: VITE + REACT SPA ]
+---------------------------------
+|--> pages/      : Represents independent views (Dashboard, Managers, Analytics).
+|--> layouts/    : DashboardLayout.jsx provides the persist Sidebar state & Context boundary.
+|--> api/        : Axios interceptor module. Watches localStorage for 'smartsched_token' intercepting/attaching to `Authorization: Bearer <TOKEN>` on every outbound call.
+|--> Flow        : User visually edits -> React handles Component State -> Submit triggers Axios -> Receives JSON payload -> triggers React re-render.
+
+[ 2. BACKEND: EXPRESS.JS API GATEWAY ]
+--------------------------------------
+|--> Middleware/ : `authMiddleware.js` decodes JWT secret, prevents unauthorized actions.
+|--> Routes/     : Maps HTTP VERB requests directly to specific Controller logic (e.g. GET /api/teachers -> getAll).
+|--> Controllers/: Core routing wrappers. Validates payload arrays, handles error catching, and returns formatted JSON data statuses.
+|--> Services/   : `schedulerService.js` operates the core heavy-lifting generation logic. It iterates Class-by-Class pulling all associated DB collections to map combinations. 
+
+[ 3. DATABASE: MONGODB / MONGOOSE ]
+-----------------------------------
+|--> Models/     : Explicit schema validation.
+    |_> Admin: Credentials + bcrypt Hash injection hook.
+    |_> TimetableEntry: Central Pivot Table. Stores populated references (ObjectId) to Class, Subject, Room, and Teacher across specific Time/Slot boundaries.
+    |_> Entities: Teacher, Subject, Class, Room. Inter-referencing schemas.
+
+[ 4. DATA FLOW EXAMPLE (Generate Request) ]
+-------------------------------------------
+1. Admin clicks "Generate Timetable"
+2. Axios posts -> `POST /api/timetable/generate`
+3. Controller triggers -> `schedulerService.generateTimetable()`
+4. Engine deletes old entries -> Reads all constraints -> Iterates and computes.
+5. Engine runs `insertMany` in MongoDB.
+6. Return success -> Dashboard re-fetches stats -> Matrix updates.
